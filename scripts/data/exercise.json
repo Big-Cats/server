@@ -1,22 +1,23 @@
 [
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do the thing"
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
   },
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do 2nd thing"
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
   },
   {
-    "user_id": 2,
-    "completed": true,
-    "description": "Do that thing I already did"
-  },
-  {
-    "user_id": 2,
-    "completed": false,
-    "description": "Do the thing (#4)"
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
   }
 ]

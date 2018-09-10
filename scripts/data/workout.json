@@ -1,22 +1,14 @@
 [
   {
     "user_id": 1,
-    "completed": false,
-    "description": "Do the thing"
+    "date": ""
   },
   {
     "user_id": 1,
-    "completed": false,
-    "description": "Do 2nd thing"
+    "date": ""
   },
   {
-    "user_id": 2,
-    "completed": true,
-    "description": "Do that thing I already did"
-  },
-  {
-    "user_id": 2,
-    "completed": false,
-    "description": "Do the thing (#4)"
+    "user_id": 1,
+    "date": ""
   }
 ]

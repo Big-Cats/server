@@ -1,22 +1,18 @@
 [
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do the thing"
+    "name": "squat",
+    "muscle": "legs",
+    "description": "power"
   },
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do 2nd thing"
+    "name": "flat-bench",
+    "muscle": "pectoral",
+    "description": "controlled movement down, explosive movement up"
   },
   {
-    "user_id": 2,
-    "completed": true,
-    "description": "Do that thing I already did"
-  },
-  {
-    "user_id": 2,
-    "completed": false,
-    "description": "Do the thing (#4)"
+    "name": "sit-up",
+    "muscle": "abdominal",
+    "description": "think summer bod!"
   }
+  
 ]

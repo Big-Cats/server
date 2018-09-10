@@ -1,22 +1,24 @@
 [
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do the thing"
+    "program_id": 1,
+    "movement_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight-percentage": 80
   },
   {
-    "user_id": 1,
-    "completed": false,
-    "description": "Do 2nd thing"
+    "program_id": 1,
+    "movement_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight-percentage": 80
   },
   {
-    "user_id": 2,
-    "completed": true,
-    "description": "Do that thing I already did"
-  },
-  {
-    "user_id": 2,
-    "completed": false,
-    "description": "Do the thing (#4)"
+    "program_id": 1,
+    "movement_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight-percentage": 80
   }
+  
 ]
