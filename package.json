@@ -1,0 +1,30 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "create-tables": "node scripts/create-tables.js",
+    "drop-tables": "node scripts/drop-tables.js",
+    "recreate-tables": "npm run drop-tables && npm run create-tables",
+    "seed-data": "node scripts/seed-data.js",
+    "db-load-all": "npm run recreate-tables && npm run seed-data",
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "exit 0",
+    "start": "nodemon server.js"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "morgan": "^1.9.0",
+    "pg": "^7.4.3",
+    "superagent": "^3.8.3"
+  },
+  "devDependencies": {
+    "eslint": "^5.4.0",
+    "nodemon": "^1.18.3"
+  }
+}
