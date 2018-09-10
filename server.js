@@ -123,34 +123,38 @@ app.get('/api/movements', (req, res, next) => {
     })
     .catch(next);
 });
+
 app.get('/api/programs', (req, res, next) => {
 
   client.query(`
-    select 
+    SELECT 
+      pm.program_id,
+      m.name,
       pm.sets, 
       pm.reps, 
       pm.weight_percentage
-    from programs_to_movements pm;
-
+    FROM programs_to_movements pm
+    LEFT JOIN movements m
+    ON pm.movement_id = m.id;
+  
       select
+        p.id,
         p.name,
         p.description
       from programs p;
-
-        select
-          m.name
-        from movements m;
   `
   )
     .then(result => {
       const programMovements = result[0].rows;
       const programs = result[1].rows;
-      const movementList = result[2].rows;
-
-      programMovements.filter( () =>
-
-      )
-
+      function pmSelector(val) {
+        return programMovements.filter(pm => pm.program_id === val);
+      }
+      programs.forEach(program => {
+        const programId = program.id;
+        program.exercises = [];
+        program.exercises.push(pmSelector(programId));
+      });
 
       res.send(programs);
     })
@@ -158,60 +162,51 @@ app.get('/api/programs', (req, res, next) => {
 });
 
 
-.then(result => {
-  const goals = result[0].rows;
-  const users = result[1].rows;
-  users.forEach(user => {
-    user.goals = goals.filter(goal => {
-      return goal.userId === user.id;
-    });
-  });
-  res.send(users);
-})
 
 
-app.get('/api/programs', (req, res, next) => {
 
-  const pToGPromise = client.query(`
-    select 
-      pm.program_id,
-      pm.sets, 
-      pm.reps, 
-      pm.weight_percentage
-    from programs_to_movements pm;
-  `);
+// app.get('/api/programs', (req, res, next) => {
 
-  const programsPromise = client.query(`
-    select
-      p.name,
-      p.description
-    from programs p;
-  `);
-  const movementsPromise = client.query(`
-    select
-      m.name
-    from movements m;
-  `);
+//   const pToGPromise = client.query(`
+//     select 
+//       pm.program_id,
+//       pm.sets, 
+//       pm.reps, 
+//       pm.weight_percentage
+//     from programs_to_movements pm;
+//   `);
 
-  Promise.all([pToGPromise, programsPromise, movementsPromise])
-    .then(promiseValues => {
-      const pToGResult = promiseValues[0];
-      const programsResult = promiseValues[1];
-      const movementsResult = promiseValues[2];
+//   const programsPromise = client.query(`
+//     select
+//       p.name,
+//       p.description
+//     from programs p;
+//   `);
+//   const movementsPromise = client.query(`
+//     select
+//       m.name
+//     from movements m;
+//   `);
 
-      if(pToGResult.rows.length === 0) {
-        res.sendStatus(404);
-        return;
-      }
+//   Promise.all([pToGPromise, programsPromise, movementsPromise])
+//     .then(promiseValues => {
+//       const pToGResult = promiseValues[0];
+//       const programsResult = promiseValues[1];
+//       const movementsResult = promiseValues[2];
 
-      const quadrant = quadrantResult.rows[0];
-      const neighborhoods = neighborhoodsResult.rows;
-      quadrant.neighborhoods = neighborhoods;
+//       if(pToGResult.rows.length === 0) {
+//         res.sendStatus(404);
+//         return;
+//       }
 
-      res.send(quadrant);
-    })
-    .catch(next);
-});
+//       const quadrant = quadrantResult.rows[0];
+//       const neighborhoods = neighborhoodsResult.rows;
+//       quadrant.neighborhoods = neighborhoods;
+
+//       res.send(quadrant);
+//     })
+//     .catch(next);
+// });
 
 
 
