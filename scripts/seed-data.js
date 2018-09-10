@@ -24,13 +24,14 @@ Promise.all(
       movements.map(movement => {
         return client.query(`
             INSERT INTO movements (
+              user_id,
               name, 
               muscle,
               description
             )
-            VALUES ($1, $2, $3);
+            VALUES ($1, $2, $3, $4);
         `,
-        [movement.name, movement.muscle, movement.description]
+        [movement.user_id, movement.name, movement.muscle, movement.description]
         ).then(result => result.rows[0]);
       })
     );

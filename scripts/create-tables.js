@@ -9,6 +9,7 @@ client.query(`
     );
     CREATE TABLE IF NOT EXISTS movements (
       id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
       name VARCHAR(256) NOT NULL,
       muscle VARCHAR(256),
       description VARCHAR(1024)

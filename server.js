@@ -107,8 +107,112 @@ app.use((req, res, next) => {
 
 // api data routes
 
-// goals
-app.get('/api/me/goals', (req, res, next) => {
+app.get('/api/movements', (req, res, next) => {
+
+  client.query(`
+    select 
+      name, 
+      muscle, 
+      description
+    from movements
+    order by name;
+  `
+  )
+    .then(result => {
+      res.send(result.rows);
+    })
+    .catch(next);
+});
+
+app.get('/api/programs', (req, res, next) => {
+
+  client.query(`
+    SELECT 
+      pm.program_id,
+      m.name,
+      pm.sets, 
+      pm.reps, 
+      pm.weight_percentage
+    FROM programs_to_movements pm
+    LEFT JOIN movements m
+    ON pm.movement_id = m.id;
+  
+      select
+        p.id,
+        p.name,
+        p.description
+      from programs p;
+  `
+  )
+    .then(result => {
+      const programMovements = result[0].rows;
+      const programs = result[1].rows;
+      function pmSelector(val) {
+        return programMovements.filter(pm => pm.program_id === val);
+      }
+      programs.forEach(program => {
+        const programId = program.id;
+        program.exercises = [];
+        program.exercises.push(pmSelector(programId));
+      });
+
+      res.send(programs);
+    })
+    .catch(err => console.log(err));
+});
+
+
+
+
+
+// app.get('/api/programs', (req, res, next) => {
+
+//   const pToGPromise = client.query(`
+//     select 
+//       pm.program_id,
+//       pm.sets, 
+//       pm.reps, 
+//       pm.weight_percentage
+//     from programs_to_movements pm;
+//   `);
+
+//   const programsPromise = client.query(`
+//     select
+//       p.name,
+//       p.description
+//     from programs p;
+//   `);
+//   const movementsPromise = client.query(`
+//     select
+//       m.name
+//     from movements m;
+//   `);
+
+//   Promise.all([pToGPromise, programsPromise, movementsPromise])
+//     .then(promiseValues => {
+//       const pToGResult = promiseValues[0];
+//       const programsResult = promiseValues[1];
+//       const movementsResult = promiseValues[2];
+
+//       if(pToGResult.rows.length === 0) {
+//         res.sendStatus(404);
+//         return;
+//       }
+
+//       const quadrant = quadrantResult.rows[0];
+//       const neighborhoods = neighborhoodsResult.rows;
+//       quadrant.neighborhoods = neighborhoods;
+
+//       res.send(quadrant);
+//     })
+//     .catch(next);
+// });
+
+
+
+
+
+app.get('/api/me/exercises', (req, res, next) => {
 
   client.query(`
     select 
@@ -127,6 +231,27 @@ app.get('/api/me/goals', (req, res, next) => {
     })
     .catch(next);
 });
+app.get('/api/me/sets', (req, res, next) => {
+
+  client.query(`
+    select 
+      id, 
+      user_id as "userId", 
+      description, 
+      completed
+    from goals
+    where user_id = $1
+    order by description;
+  `,
+  [req.userId]
+  )
+    .then(result => {
+      res.send(result.rows);
+    })
+    .catch(next);
+});
+
+
 
 app.post('/api/me/goals', (req, res, next) => {
   const body = req.body;
