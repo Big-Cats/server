@@ -257,7 +257,22 @@ app.get('/api/me/sets', (req, res, next) => {
     .catch(next);
 });
 
+app.post('/api/me/exercises', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
 
+  client.query(`
+    insert into exercises (movement_id, workout_id, sets, reps, weight)
+    values ($1, $2, $3, $4, $5)
+    returning *;
+  `,
+  [req.userId, body.movement_id, body.workout_id, body.sets, body.reps, body.weight]
+  ).then(result => {
+    // send back object
+    res.send(result.rows[0]);
+  })
+    .catch(next);
+});
 
 app.post('/api/me/goals', (req, res, next) => {
   const body = req.body;
