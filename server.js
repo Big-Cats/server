@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-
 // express for serving, morgan for logging, cors for cors, request for client AJAX lib for calling 3rd party APIs
 const express = require('express');
 const morgan = require('morgan');
