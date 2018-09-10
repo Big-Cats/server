@@ -1,0 +1,22 @@
+[
+  {
+    "user_id": 1,
+    "completed": false,
+    "description": "Do the thing"
+  },
+  {
+    "user_id": 1,
+    "completed": false,
+    "description": "Do 2nd thing"
+  },
+  {
+    "user_id": 2,
+    "completed": true,
+    "description": "Do that thing I already did"
+  },
+  {
+    "user_id": 2,
+    "completed": false,
+    "description": "Do the thing (#4)"
+  }
+]
