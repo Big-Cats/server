@@ -1,18 +1,20 @@
 [
   {
+    "user_id": 1,
     "name": "squat",
     "muscle": "legs",
     "description": "power"
   },
   {
+    "user_id": 1,
     "name": "flat-bench",
     "muscle": "pectoral",
     "description": "controlled movement down, explosive movement up"
   },
   {
+    "user_id": 1,
     "name": "sit-up",
     "muscle": "abdominal",
     "description": "think summer bod!"
   }
-  
 ]
