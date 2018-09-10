@@ -23,7 +23,7 @@ Promise.all(
     return Promise.all(
       movements.map(movement => {
         return client.query(`
-            INSERT INTO movement (
+            INSERT INTO movements (
               name, 
               muscle,
               description

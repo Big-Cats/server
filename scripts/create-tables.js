@@ -21,8 +21,8 @@ client.query(`
     );
     CREATE TABLE IF NOT EXISTS programs_to_movements (
       id SERIAL PRIMARY KEY,
-      program_id INTEGER NOT NULL REFERENCES program(id),
-      movement_id INTEGER NOT NULL REFERENCES movement(id),
+      program_id INTEGER NOT NULL REFERENCES programs(id),
+      movement_id INTEGER NOT NULL REFERENCES movements(id),
       sets INTEGER,
       reps INTEGER,
       weight_percentage INTEGER
@@ -34,15 +34,15 @@ client.query(`
     );
     CREATE TABLE IF NOT EXISTS exercises (
       id SERIAL PRIMARY KEY,
-      movement_id INTEGER NOT NULL REFERENCES movement(id),
-      workout_id INTEGER NOT NULL REFERENCES workout(id),
+      movement_id INTEGER NOT NULL REFERENCES movements(id),
+      workout_id INTEGER NOT NULL REFERENCES workouts(id),
       sets INTEGER,
       reps INTEGER,
       weight INTEGER
     );
     CREATE TABLE IF NOT EXISTS sets (
       id SERIAL PRIMARY KEY,
-      exercise_id INTEGER NOT NULL REFERENCES exercise(id),
+      exercise_id INTEGER NOT NULL REFERENCES exercises(id),
       reps INTEGER,
       weight INTEGER
     );
