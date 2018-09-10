@@ -129,7 +129,7 @@ app.get('/api/programs', (req, res, next) => {
   client.query(`
     SELECT 
       pm.program_id,
-      m.name,
+      m.name as "movement",
       pm.sets, 
       pm.reps, 
       pm.weight_percentage
@@ -152,85 +152,91 @@ app.get('/api/programs', (req, res, next) => {
       }
       programs.forEach(program => {
         const programId = program.id;
-        program.exercises = [];
-        program.exercises.push(pmSelector(programId));
+        program.exercises = pmSelector(programId);
       });
 
       res.send(programs);
     })
-    .catch(err => console.log(err));
+    .catch(next);
 });
 
 
+// app.get('/api/me/workouts', (req, res, next) => {
 
-
-
-// app.get('/api/programs', (req, res, next) => {
-
-//   const pToGPromise = client.query(`
-//     select 
+//   client.query(`
+//     SELECT 
 //       pm.program_id,
+//       m.name as "movement",
 //       pm.sets, 
 //       pm.reps, 
 //       pm.weight_percentage
-//     from programs_to_movements pm;
-//   `);
-
-//   const programsPromise = client.query(`
-//     select
-//       p.name,
-//       p.description
-//     from programs p;
-//   `);
-//   const movementsPromise = client.query(`
-//     select
-//       m.name
-//     from movements m;
-//   `);
-
-//   Promise.all([pToGPromise, programsPromise, movementsPromise])
-//     .then(promiseValues => {
-//       const pToGResult = promiseValues[0];
-//       const programsResult = promiseValues[1];
-//       const movementsResult = promiseValues[2];
-
-//       if(pToGResult.rows.length === 0) {
-//         res.sendStatus(404);
-//         return;
+//     FROM programs_to_movements pm
+//     LEFT JOIN movements m
+//     ON pm.movement_id = m.id;
+  
+//       select
+//         w.id,
+//         w.date,
+//       from workouts w;
+//   `
+//   )
+//     .then(result => {
+//       const programMovements = result[0].rows;
+//       const programs = result[1].rows;
+//       function pmSelector(val) {
+//         return programMovements.filter(pm => pm.program_id === val);
 //       }
+//       programs.forEach(program => {
+//         const programId = program.id;
+//         program.exercises = [];
+//         program.exercises.push(pmSelector(programId));
+//       });
 
-//       const quadrant = quadrantResult.rows[0];
-//       const neighborhoods = neighborhoodsResult.rows;
-//       quadrant.neighborhoods = neighborhoods;
-
-//       res.send(quadrant);
+//       res.send(programs);
 //     })
 //     .catch(next);
 // });
 
 
+app.get('/api/me/workouts', (req, res, next) => {
 
-
-
-app.get('/api/me/exercises', (req, res, next) => {
-
-  client.query(`
-    select 
-      id, 
-      user_id as "userId", 
-      description, 
-      completed
-    from goals
-    where user_id = $1
-    order by description;
+  const workoutsPromise = client.query(`
+    select id, date
+    from workouts w
+    where w.user_id = $1;
   `,
-  [req.userId]
-  )
-    .then(result => {
-      res.send(result.rows);
+  [req.userId]);
+
+  const exercisesPromise = client.query(`
+    SELECT 
+      e.workout_id,
+      m.name as "movement",
+      e.sets, 
+      e.reps, 
+      e.weight
+    FROM exercises e
+    WHERE user_id = $1
+    LEFT JOIN movements m
+    ON e.movement_id = m.id;
+  `,
+  [req.userId]);
+
+  Promise.all([workoutsPromise, exercisesPromise])
+    .then(promiseValues => {
+      const workoutsResult = promiseValues[0];
+      const exercisesResult = promiseValues[1];
+
+      if(workoutsResult.rows.length === 0 || exercisesResult.rows.length === 0) {
+        res.sendStatus(404);
+        return;
+      }
+
+      res.send(workoutsResult);
     })
     .catch(next);
 });
+
+
 app.get('/api/me/sets', (req, res, next) => {
 
   client.query(`
