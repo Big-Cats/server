@@ -1,0 +1,23 @@
+[
+  {
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
+  },
+  {
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
+  },
+  {
+    "movement_id": 1,
+    "workout_id": 1,
+    "sets": 5,
+    "reps": 5,
+    "weight": 135
+  }
+]

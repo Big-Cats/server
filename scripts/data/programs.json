@@ -1,0 +1,18 @@
+[
+  {
+    "user_id": 1,
+    "name": "lower",
+    "description": "leg day"
+  },
+  {
+    "user_id": 1,
+    "name": "push",
+    "description": "chest/tri"
+  },
+  {
+    "user_id": 1,
+    "name": "pull",
+    "description": "back/bi"
+  }
+
+]
