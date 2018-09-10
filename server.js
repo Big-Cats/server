@@ -129,7 +129,7 @@ app.get('/api/programs', (req, res, next) => {
   client.query(`
     SELECT 
       pm.program_id,
-      m.name,
+      m.name as "movement",
       pm.sets, 
       pm.reps, 
       pm.weight_percentage
@@ -160,53 +160,6 @@ app.get('/api/programs', (req, res, next) => {
     })
     .catch(err => console.log(err));
 });
-
-
-
-
-
-// app.get('/api/programs', (req, res, next) => {
-
-//   const pToGPromise = client.query(`
-//     select 
-//       pm.program_id,
-//       pm.sets, 
-//       pm.reps, 
-//       pm.weight_percentage
-//     from programs_to_movements pm;
-//   `);
-
-//   const programsPromise = client.query(`
-//     select
-//       p.name,
-//       p.description
-//     from programs p;
-//   `);
-//   const movementsPromise = client.query(`
-//     select
-//       m.name
-//     from movements m;
-//   `);
-
-//   Promise.all([pToGPromise, programsPromise, movementsPromise])
-//     .then(promiseValues => {
-//       const pToGResult = promiseValues[0];
-//       const programsResult = promiseValues[1];
-//       const movementsResult = promiseValues[2];
-
-//       if(pToGResult.rows.length === 0) {
-//         res.sendStatus(404);
-//         return;
-//       }
-
-//       const quadrant = quadrantResult.rows[0];
-//       const neighborhoods = neighborhoodsResult.rows;
-//       quadrant.neighborhoods = neighborhoods;
-
-//       res.send(quadrant);
-//     })
-//     .catch(next);
-// });
 
 
 
