@@ -107,6 +107,7 @@ app.use((req, res, next) => {
 
 // api data routes
 
+// users
 app.get('/api/users', (req, res) => {
   client.query(`
   SELECT
@@ -133,6 +134,8 @@ app.get('/api/users', (req, res) => {
     })
     .catch(err => console.log(err));
 });
+
+// movements
 app.get('/api/movements', (req, res, next) => {
 
   client.query(`
@@ -149,6 +152,8 @@ app.get('/api/movements', (req, res, next) => {
     })
     .catch(next);
 });
+
+// programs
 app.get('/api/programs', (req, res, next) => {
 
   client.query(`
@@ -184,6 +189,48 @@ app.get('/api/programs', (req, res, next) => {
     })
     .catch(next);
 });
+app.post('/api/programs', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
+
+  let programId;
+
+  client.query(`
+    insert into programs (user_id, name, description)
+    values ($1, $2, $3)
+    returning *, user_id as "userId";
+  `,
+  [req.userId, body.name, body.description]
+  ).then(result => {
+    const program = result.rows[0];
+    programId = program.id;
+    res.send(result.rows[0]);
+  }
+  ).then(() => {
+
+    const pToMovementsPromises = [];
+    
+    body.exercises.forEach(exercise => {
+      const promise = client.query(`
+        insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
+        values ($1, $2, $3, $4, $5)
+        returning *, program_id as "programId";
+      `,
+      [programId, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
+
+      pToMovementsPromises.push(promise);
+    });
+
+    return Promise.all([...pToMovementsPromises]);
+  }
+  ).then(result => {
+    // send back objects
+    res.send(result.rows);
+  })
+    .catch(next);
+});
+
+// workouts
 app.get('/api/me/workouts', (req, res, next) => {
 
   const workoutsPromise = client.query(`
@@ -229,6 +276,96 @@ app.get('/api/me/workouts', (req, res, next) => {
     })
     .catch(next);
 });
+app.post('/api/me/workouts', (req, res, next) => {
+
+  client.query(`
+    INSERT INTO workouts (user_id)
+    VALUES ($1)
+    RETURNING *;
+  `,
+  [req.userId]
+  ).then(result => {
+    res.send(result.rows[0]);
+  })
+    .catch(next);
+});
+app.delete('/api/me/workouts', (req, res, next) => {
+  console.log('deleting workouts');
+  const body = req.body;
+
+  const exercisesPromise = client.query(`
+    delete from exercises where workout_id = $1;
+  `,
+  [body.id]);
+  const setsPromise = client.query(`
+    delete from sets where workout_id = $1;
+  `,
+  [body.id]);
+  const workoutsPromise = client.query(`
+    delete from workouts where id=$1;
+  `,
+  [body.id]);
+
+  Promise.all([exercisesPromise, setsPromise, workoutsPromise])
+    .then(() => {
+      res.send({ removed: true });
+    })
+    .catch(next);
+});
+
+// exercises
+app.post('/api/me/exercises', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
+
+  client.query(`
+    insert into exercises (workout_id, movement_id, sets, reps, weight)
+    values ($1, $2, $3, $4, $5)
+    returning *;
+  `,
+  [body.workout_id, body.movement_id, body.sets, body.reps, body.weight]
+  ).then(result => {
+    // send back object
+    res.send(result.rows[0]);
+  })
+    .catch(next);
+});
+app.put('/api/me/exercises', (req, res, next) => {
+  console.log('posting');
+  const body = req.body;
+  client.query(`
+    UPDATE exercises
+    SET 
+      movement_id = $2, 
+      workout_id = $3,
+      reps = $4,
+      sets = $5,
+      weight = $6
+    WHERE id = $1
+    RETURNING *;
+  `,
+  [body.id, body.movement_id, body.workout_id, body.reps, body.sets, body.weight]
+  )
+    .then(result => {
+      res.send(result.rows[0]);
+    })
+    .catch(next);
+  
+});
+app.delete('/api/me/exercises', (req, res, next) => {
+  const body = req.body;
+
+  client.query(`
+    delete from exercises where id=$1;
+  `,
+  [body.id]
+  ).then(() => {
+    res.send({ removed: true });
+  })
+    .catch(next);
+});
+
+// sets
 app.get('/api/me/sets', (req, res, next) => {
 
   const workoutsPromise = client.query(`
@@ -273,37 +410,6 @@ app.get('/api/me/sets', (req, res, next) => {
     })
     .catch(next);
 });
-
-
-app.post('/api/me/workouts', (req, res, next) => {
-  
-  client.query(`
-    INSERT INTO workouts (user_id)
-    VALUES ($1)
-    RETURNING *;
-  `,
-  [req.userId]
-  ).then(result => {
-    res.send(result.rows[0]);
-  })
-    .catch(next);
-});
-app.post('/api/me/exercises', (req, res, next) => {
-  const body = req.body;
-  if(body.description === 'error') return next('bad name');
-
-  client.query(`
-    insert into exercises (workout_id, movement_id, sets, reps, weight)
-    values ($1, $2, $3, $4, $5)
-    returning *;
-  `,
-  [body.workout_id, body.movement_id, body.sets, body.reps, body.weight]
-  ).then(result => {
-    // send back object
-    res.send(result.rows[0]);
-  })
-    .catch(next);
-});
 app.post('/api/me/sets', (req, res, next) => {
   const body = req.body;
   if(body.description === 'error') return next('bad name');
@@ -319,124 +425,6 @@ app.post('/api/me/sets', (req, res, next) => {
     res.send(result.rows[0]);
   })
     .catch(next);
-});
-
-
-
-app.post('/api/programs', (req, res, next) => {
-  const body = req.body;
-  if(body.description === 'error') return next('bad name');
-
-  let programId;
-
-  client.query(`
-    insert into programs (user_id, name, description)
-    values ($1, $2, $3)
-    returning *, user_id as "userId";
-  `,
-  [req.userId, body.name, body.description]
-  ).then(result => {
-    const program = result.rows[0];
-    programId = program.id;
-    res.send(result.rows[0]);
-  }
-  ).then(() => {
-
-    const pToMovementsPromises = [];
-    
-    body.exercises.forEach(exercise => {
-      const promise = client.query(`
-        insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
-        values ($1, $2, $3, $4, $5)
-        returning *, program_id as "programId";
-      `,
-      [programId, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
-
-      pToMovementsPromises.push(promise);
-    });
-
-    return Promise.all([...pToMovementsPromises]);
-  }
-  ).then(result => {
-    // send back objects
-    res.send(result.rows);
-  })
-    .catch(next);
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-app.post('/api/programs', (req, res, next) => {
-  const body = req.body;
-  if(body.description === 'error') return next('bad name');
-
-  const programsPromise = client.query(`
-    insert into programs (user_id, name, description)
-    values ($1, $2, $3)
-    returning *, user_id as "userId";
-  `,
-  [req.userId, body.name, body.description]);
-
-  const pToMovementsPromises = [];
-
-  body.exercises.forEach(exercise => {
-    const promise = client.query(`
-      insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
-      values ($1, $2, $3, $4, $5)
-      returning *, program_id as "programId";
-    `,
-    [1, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
-    
-    pToMovementsPromises.push(promise);
-  });
-
-  Promise.all([programsPromise, ...pToMovementsPromises])
-    .then(result => {
-      const program = promiseValues[0].rows;
-      // const sets = promiseValues[1].rows;
-
-      
-
-
-      res.send(result[0].rows[0]);
-    })
-    .catch(next);
-});
-
-
-app.put('/api/me/exercises', (req, res, next) => {
-  console.log('posting');
-  const body = req.body;
-  client.query(`
-    UPDATE exercises
-    SET 
-      movement_id = $2, 
-      workout_id = $3,
-      reps = $4,
-      sets = $5,
-      weight = $6
-    WHERE id = $1
-    RETURNING *;
-  `,
-  [body.id, body.movement_id, body.workout_id, body.reps, body.sets, body.weight]
-  )
-    .then(result => {
-      res.send(result.rows[0]);
-    })
-    .catch(next);
-  
 });
 app.put('/api/me/sets', (req, res, next) => {
   console.log('updating sets');
@@ -461,43 +449,6 @@ app.put('/api/me/sets', (req, res, next) => {
     .catch(next);
   
 });
-
-
-app.delete('/api/me/workouts', (req, res, next) => {
-  console.log('deleting workouts');
-  const body = req.body;
-
-  const exercisesPromise = client.query(`
-    delete from exercises where workout_id = $1;
-  `,
-  [body.id]);
-  const setsPromise = client.query(`
-    delete from sets where workout_id = $1;
-  `,
-  [body.id]);
-  const workoutsPromise = client.query(`
-    delete from workouts where id=$1;
-  `,
-  [body.id]);
-
-  Promise.all([exercisesPromise, setsPromise, workoutsPromise])
-    .then(() => {
-      res.send({ removed: true });
-    })
-    .catch(next);
-});
-app.delete('/api/me/exercises', (req, res, next) => {
-  const body = req.body;
-
-  client.query(`
-    delete from exercises where id=$1;
-  `,
-  [body.id]
-  ).then(() => {
-    res.send({ removed: true });
-  })
-    .catch(next);
-});
 app.delete('/api/me/sets', (req, res, next) => {
   const body = req.body;
 
@@ -510,7 +461,6 @@ app.delete('/api/me/sets', (req, res, next) => {
   })
     .catch(next);
 });
-
 
 
 
