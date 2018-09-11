@@ -7,11 +7,18 @@ client.query(`
       email VARCHAR(256) NOT NULL,
       password VARCHAR(256) NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS muscles (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      name VARCHAR(256) NOT NULL,
+      description VARCHAR(1024)
+    );
     CREATE TABLE IF NOT EXISTS movements (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id),
       name VARCHAR(256) NOT NULL,
-      muscle VARCHAR(256),
+      muscle NOT NULL REFERENCES muscles(id),
       description VARCHAR(1024)
     );
     CREATE TABLE IF NOT EXISTS programs (

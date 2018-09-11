@@ -4,6 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
+    "scraper": "node scripts/data/data-scraper.js",
     "create-tables": "node scripts/create-tables.js",
     "drop-tables": "node scripts/drop-tables.js",
     "recreate-tables": "npm run drop-tables && npm run create-tables",
