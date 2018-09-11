@@ -310,11 +310,30 @@ app.post('/api/me/exercises', (req, res, next) => {
     .catch(next);
 });
 
+app.delete('/api/me/exercises/:id', (req, res, next) => {
+  client.query(`
+    delete from exercises where id=$1;
+  `,
+  [req.params.id]
+  ).then(() => {
+    res.send({ removed: true });
+  })
+    .catch(next);
+});
+app.delete('/api/me/sets/:id', (req, res, next) => {
+  client.query(`
+    delete from neighborhoods where id=$1;
+  `,
+  [req.params.id]
+  ).then(() => {
+    res.send({ removed: true });
+  })
+    .catch(next);
+});
 
 
 
-
-app.post('/api/me/goals', (req, res, next) => {
+app.post('/api/me/sets', (req, res, next) => {
   const body = req.body;
   if(body.description === 'error') return next('bad name');
 
@@ -331,7 +350,7 @@ app.post('/api/me/goals', (req, res, next) => {
     .catch(next);
 });
 
-app.put('/api/me/goals', (req, res) => {
+app.put('/api/me/sets', (req, res) => {
   console.log('posting');
   const body = req.body;
   client.query(`
