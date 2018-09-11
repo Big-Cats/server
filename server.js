@@ -34,9 +34,9 @@ app.post('/api/auth/signup', (req, res) => {
   }
 
   client.query(`
-    select count(*)
-    from users
-    where email = $1
+    SELECT count(*)
+    FROM users
+    WHERE email = $1
   `,
   [email])
     .then(results => {
@@ -46,9 +46,9 @@ app.post('/api/auth/signup', (req, res) => {
       }
 
       client.query(`
-        insert into users (email, password)
-        values ($1, $2)
-        returning id, email
+        INSERT INTO users (email, password)
+        VALUES ($1, $2)
+        RETURNING id, email
       `,
       [email, password])
         .then(results => {
@@ -70,9 +70,9 @@ app.post('/api/auth/signin', (req, res) => {
   }
 
   client.query(`
-    select id, email, password
-    from users
-    where email = $1
+    SELECT id, email, password
+    FROM users
+    WHERE email = $1
   `,
   [email]
   )
@@ -135,21 +135,54 @@ app.get('/api/users', (req, res) => {
     .catch(err => console.log(err));
 });
 
-// movements
-app.get('/api/movements', (req, res, next) => {
+// muscles
+app.get('/api/muscles', (req, res, next) => {
 
   client.query(`
-    select 
-      name, 
-      muscle, 
-      description
-    from movements
-    order by name;
+    SELECT id, name
+    FROM muscles
+    ORDER BY name;
   `
   )
     .then(result => {
       res.send(result.rows);
     })
+    .catch(next);
+});
+
+
+// movements
+app.get('/api/movements', (req, res, next) => {
+
+  client.query(`
+    SELECT
+      mo.id, 
+      mo.name,
+      mu.name as "muscle"
+    FROM movements mo
+    LEFT JOIN muscles mu
+    ON mo.muscle_id = mu.id
+    ORDER BY mo.name;
+  `
+  )
+    .then(result => {
+      res.send(result.rows);
+    })
+    .catch(next);
+});
+app.post('/api/movements', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
+
+  client.query(`
+    INSERT INTO movements (user_id, name, muscle_id)
+    VALUES ($1, $2, $3)
+    RETURNING *;
+  `,
+  [req.userId, body.name, body.muscle_id]
+  ).then(result => {
+    res.send(result.rows[0]);
+  })
     .catch(next);
 });
 
@@ -167,11 +200,11 @@ app.get('/api/programs', (req, res, next) => {
     LEFT JOIN movements m
     ON pm.movement_id = m.id;
   
-      select
+      SELECT
         p.id,
         p.name,
         p.description
-      from programs p;
+      FROM programs p;
   `
   )
     .then(result => {
@@ -196,9 +229,9 @@ app.post('/api/programs', (req, res, next) => {
   let programId;
 
   client.query(`
-    insert into programs (user_id, name, description)
-    values ($1, $2, $3)
-    returning *, user_id as "userId";
+    INSERT INTO programs (user_id, name, description)
+    VALUES ($1, $2, $3)
+    RETURNING *, user_id as "userId";
   `,
   [req.userId, body.name, body.description]
   ).then(result => {
@@ -212,9 +245,9 @@ app.post('/api/programs', (req, res, next) => {
     
     body.exercises.forEach(exercise => {
       const promise = client.query(`
-        insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
-        values ($1, $2, $3, $4, $5)
-        returning *, program_id as "programId";
+        INSERT INTO programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *, program_id as "programId";
       `,
       [programId, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
 
@@ -294,15 +327,15 @@ app.delete('/api/me/workouts', (req, res, next) => {
   const body = req.body;
 
   const exercisesPromise = client.query(`
-    delete from exercises where workout_id = $1;
+    DELETE FROM exercises WHERE workout_id = $1;
   `,
   [body.id]);
   const setsPromise = client.query(`
-    delete from sets where workout_id = $1;
+    DELETE FROM sets WHERE workout_id = $1;
   `,
   [body.id]);
   const workoutsPromise = client.query(`
-    delete from workouts where id=$1;
+    DELETE FROM workouts WHERE id=$1;
   `,
   [body.id]);
 
@@ -319,9 +352,9 @@ app.post('/api/me/exercises', (req, res, next) => {
   if(body.description === 'error') return next('bad name');
 
   client.query(`
-    insert into exercises (workout_id, movement_id, sets, reps, weight)
-    values ($1, $2, $3, $4, $5)
-    returning *;
+    INSERT INTO exercises (workout_id, movement_id, sets, reps, weight)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *;
   `,
   [body.workout_id, body.movement_id, body.sets, body.reps, body.weight]
   ).then(result => {
@@ -356,7 +389,7 @@ app.delete('/api/me/exercises', (req, res, next) => {
   const body = req.body;
 
   client.query(`
-    delete from exercises where id=$1;
+    DELETE FROM exercises WHERE id=$1;
   `,
   [body.id]
   ).then(() => {
@@ -415,9 +448,9 @@ app.post('/api/me/sets', (req, res, next) => {
   if(body.description === 'error') return next('bad name');
 
   client.query(`
-    insert into sets (workout_id, movement_id, reps, weight)
-    values ($1, $2, $3, $4)
-    returning *;
+    INSERT INTO sets (workout_id, movement_id, reps, weight)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *;
   `,
   [body.workout_id, body.movement_id, body.reps, body.weight]
   ).then(result => {
@@ -453,7 +486,7 @@ app.delete('/api/me/sets', (req, res, next) => {
   const body = req.body;
 
   client.query(`
-    delete from sets where id=$1;
+    DELETE FROM sets WHERE id=$1;
   `,
   [body.id]
   ).then(() => {
