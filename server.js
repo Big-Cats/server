@@ -320,20 +320,98 @@ app.post('/api/me/sets', (req, res, next) => {
   })
     .catch(next);
 });
+
+
+
 app.post('/api/programs', (req, res, next) => {
   const body = req.body;
   if(body.description === 'error') return next('bad name');
 
+  let programId;
+
   client.query(`
-    insert into goals (user_id, description, completed)
+    insert into programs (user_id, name, description)
     values ($1, $2, $3)
     returning *, user_id as "userId";
   `,
-  [req.userId, body.description, body.completed]
+  [req.userId, body.name, body.description]
   ).then(result => {
-    // send back object
+    const program = result.rows[0];
+    programId = program.id;
     res.send(result.rows[0]);
+  }
+  ).then(() => {
+
+    const pToMovementsPromises = [];
+    
+    body.exercises.forEach(exercise => {
+      const promise = client.query(`
+        insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
+        values ($1, $2, $3, $4, $5)
+        returning *, program_id as "programId";
+      `,
+      [programId, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
+
+      pToMovementsPromises.push(promise);
+    });
+
+    return Promise.all([...pToMovementsPromises]);
+  }
+  ).then(result => {
+    // send back objects
+    res.send(result.rows);
   })
+    .catch(next);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/api/programs', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
+
+  const programsPromise = client.query(`
+    insert into programs (user_id, name, description)
+    values ($1, $2, $3)
+    returning *, user_id as "userId";
+  `,
+  [req.userId, body.name, body.description]);
+
+  const pToMovementsPromises = [];
+
+  body.exercises.forEach(exercise => {
+    const promise = client.query(`
+      insert into programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
+      values ($1, $2, $3, $4, $5)
+      returning *, program_id as "programId";
+    `,
+    [1, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
+    
+    pToMovementsPromises.push(promise);
+  });
+
+  Promise.all([programsPromise, ...pToMovementsPromises])
+    .then(result => {
+      const program = promiseValues[0].rows;
+      // const sets = promiseValues[1].rows;
+
+      
+
+
+      res.send(result[0].rows[0]);
+    })
     .catch(next);
 });
 
