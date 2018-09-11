@@ -333,42 +333,48 @@ app.put('/api/me/exercises', (req, res) => {
 
 
 
-app.delete('/api/me/workouts/:id', (req, res, next) => {
+app.delete('/api/me/workouts', (req, res, next) => {
+  console.log('deleting workouts');
+  const body = req.body;
 
   const exercisesPromise = client.query(`
     delete from exercises where workout_id = $1;
   `,
-  [req.userId]);
+  [body.id]);
   const setsPromise = client.query(`
     delete from sets where workout_id = $1;
   `,
-  [req.userId]);
+  [body.id]);
   const workoutsPromise = client.query(`
     delete from workouts where id=$1;
   `,
-  [req.params.id]);
+  [body.id]);
 
   Promise.all([exercisesPromise, setsPromise, workoutsPromise])
-    .then(
-      res.send({ removed: true })
-    )
+    .then(() => {
+      res.send({ removed: true });
+    })
     .catch(next);
 });
-app.delete('/api/me/exercises/:id', (req, res, next) => {
+app.delete('/api/me/exercises', (req, res, next) => {
+  const body = req.body;
+
   client.query(`
     delete from exercises where id=$1;
   `,
-  [req.params.id]
+  [body.id]
   ).then(() => {
     res.send({ removed: true });
   })
     .catch(next);
 });
-app.delete('/api/me/sets/:id', (req, res, next) => {
+app.delete('/api/me/sets', (req, res, next) => {
+  const body = req.body;
+
   client.query(`
     delete from sets where id=$1;
   `,
-  [req.params.id]
+  [body.id]
   ).then(() => {
     res.send({ removed: true });
   })
