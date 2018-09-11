@@ -107,34 +107,6 @@ app.use((req, res, next) => {
 
 // api data routes
 
-// users
-app.get('/api/users', (req, res) => {
-  client.query(`
-  SELECT
-  g.id,
-  g.user_id as "userId",
-  g.description,
-  g.completed
-  FROM goals g;
-  
-    SELECT
-    u.id, 
-    u.email
-    FROM users u;
-  `)
-    .then(result => {
-      const goals = result[0].rows;
-      const users = result[1].rows;
-      users.forEach(user => {
-        user.goals = goals.filter(goal => {
-          return goal.userId === user.id;
-        });
-      });
-      res.send(users);
-    })
-    .catch(err => console.log(err));
-});
-
 // muscles
 app.get('/api/muscles', (req, res, next) => {
 
@@ -192,12 +164,12 @@ app.get('/api/programs', (req, res, next) => {
     SELECT 
       pm.program_id,
       m.name as "movement",
-      pm.sets, 
       pm.reps, 
       pm.weight_percentage
     FROM programs_to_movements pm
     LEFT JOIN movements m
-    ON pm.movement_id = m.id;
+    ON pm.movement_id = m.id
+    ORDER BY pm.movement_id;
   
       SELECT
         p.id,
@@ -244,11 +216,11 @@ app.post('/api/programs', (req, res, next) => {
     
     body.exercises.forEach(exercise => {
       const promise = client.query(`
-        INSERT INTO programs_to_movements (program_id, movement_id, sets, reps, weight_percentage)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO programs_to_movements (program_id, movement_id, reps, weight_percentage)
+        VALUES ($1, $2, $3, $4)
         RETURNING *, program_id as "programId";
       `,
-      [programId, exercise.movement_id, exercise.sets, exercise.reps, exercise.weight_percentage]);
+      [programId, exercise.movement_id, exercise.reps, exercise.weight_percentage]);
 
       pToMovementsPromises.push(promise);
     });
@@ -274,34 +246,34 @@ app.get('/api/me/workouts', (req, res, next) => {
   `,
   [req.userId]);
 
-  const exercisesPromise = client.query(`
+  const logsPromise = client.query(`
     SELECT 
       w.id,
       m.name as "movement",
-      e.weight,
-      e.reps,
-      e.sets
+      l.attempted,
+      l.completed,
+      l.weight
     FROM workouts w
-    INNER JOIN exercises e ON w.id = e.workout_id
-    LEFT JOIN movements m ON e.movement_id = m.id
+    INNER JOIN logs l ON w.id = l.workout_id
+    LEFT JOIN movements m ON l.movement_id = m.id
     WHERE w.user_id = $1;
   `,
   [req.userId]);
 
-  Promise.all([workoutsPromise, exercisesPromise])
+  Promise.all([workoutsPromise, logsPromise])
     .then(promiseValues => {
       const workouts = promiseValues[0].rows;
-      const exercises = promiseValues[1].rows;
+      const logs = promiseValues[1].rows;
 
-      if(workouts.length === 0 || exercises.length === 0) {
+      if(workouts.length === 0 || logs.length === 0) {
         res.sendStatus(404);
         return;
       }
-      function exerciseSelector(val) {
-        return exercises.filter(e => e.id === val);
+      function logSelector(val) {
+        return logs.filter(e => e.id === val);
       }
       workouts.forEach(workout => {
-        workout.exercises = exerciseSelector(workout.id);
+        workout.exercises = logSelector(workout.id);
       });
 
       res.send(workouts);
@@ -325,12 +297,8 @@ app.delete('/api/me/workouts', (req, res, next) => {
   console.log('deleting workouts');
   const body = req.body;
 
-  const exercisesPromise = client.query(`
-    DELETE FROM exercises WHERE workout_id = $1;
-  `,
-  [body.id]);
-  const setsPromise = client.query(`
-    DELETE FROM sets WHERE workout_id = $1;
+  const logsPromise = client.query(`
+    DELETE FROM logs WHERE workout_id = $1;
   `,
   [body.id]);
   const workoutsPromise = client.query(`
@@ -338,67 +306,15 @@ app.delete('/api/me/workouts', (req, res, next) => {
   `,
   [body.id]);
 
-  Promise.all([exercisesPromise, setsPromise, workoutsPromise])
+  Promise.all([logsPromise, workoutsPromise])
     .then(() => {
       res.send({ removed: true });
     })
     .catch(next);
 });
 
-// exercises
-app.post('/api/me/exercises', (req, res, next) => {
-  const body = req.body;
-  if(body.description === 'error') return next('bad name');
-
-  client.query(`
-    INSERT INTO exercises (workout_id, movement_id, sets, reps, weight)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING *;
-  `,
-  [body.workout_id, body.movement_id, body.sets, body.reps, body.weight]
-  ).then(result => {
-    // send back object
-    res.send(result.rows[0]);
-  })
-    .catch(next);
-});
-app.put('/api/me/exercises', (req, res, next) => {
-  console.log('posting');
-  const body = req.body;
-  client.query(`
-    UPDATE exercises
-    SET 
-      movement_id = $2, 
-      workout_id = $3,
-      reps = $4,
-      sets = $5,
-      weight = $6
-    WHERE id = $1
-    RETURNING *;
-  `,
-  [body.id, body.movement_id, body.workout_id, body.reps, body.sets, body.weight]
-  )
-    .then(result => {
-      res.send(result.rows[0]);
-    })
-    .catch(next);
-  
-});
-app.delete('/api/me/exercises', (req, res, next) => {
-  const body = req.body;
-
-  client.query(`
-    DELETE FROM exercises WHERE id=$1;
-  `,
-  [body.id]
-  ).then(() => {
-    res.send({ removed: true });
-  })
-    .catch(next);
-});
-
-// sets
-app.get('/api/me/sets', (req, res, next) => {
+// logs
+app.get('/api/me/logs', (req, res, next) => {
 
   const workoutsPromise = client.query(`
     SELECT 
@@ -409,71 +325,73 @@ app.get('/api/me/sets', (req, res, next) => {
   `,
   [req.userId]);
 
-  const setsPromise = client.query(`
+  const logsPromise = client.query(`
     SELECT 
       w.id,
       m.name as "movement",
-      s.weight,
-      s.reps
+      l.attempted,
+      l.completed,
+      l.weight
     FROM workouts w
-    INNER JOIN sets s ON w.id = s.workout_id
-    LEFT JOIN movements m ON s.movement_id = m.id
+    INNER JOIN logs l ON w.id = l.workout_id
+    LEFT JOIN movements m ON l.movement_id = m.id
     WHERE w.user_id = $1;
   `,
   [req.userId]);
 
-  Promise.all([workoutsPromise, setsPromise])
+  Promise.all([workoutsPromise, logsPromise])
     .then(promiseValues => {
       const workouts = promiseValues[0].rows;
-      const sets = promiseValues[1].rows;
+      const logs = promiseValues[1].rows;
 
-      if(workouts.length === 0 || sets.length === 0) {
+      if(workouts.length === 0 || logs.length === 0) {
         res.sendStatus(404);
         return;
       }
-      function setSelector(val) {
-        return sets.filter(s => s.id === val);
+      function logSelector(val) {
+        return logs.filter(l => l.id === val);
       }
       workouts.forEach(workout => {
-        workout.exercises = setSelector(workout.id);
+        workout.exercises = logSelector(workout.id);
       });
 
       res.send(workouts);
     })
     .catch(next);
 });
-app.post('/api/me/sets', (req, res, next) => {
+app.post('/api/me/logs', (req, res, next) => {
   const body = req.body;
   if(body.description === 'error') return next('bad name');
 
   client.query(`
-    INSERT INTO sets (workout_id, movement_id, reps, weight)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO logs (workout_id, movement_id, attempted, completed, weight)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *;
   `,
-  [body.workout_id, body.movement_id, body.reps, body.weight]
+  [body.workout_id, body.movement_id, body.attempted, body.completed, body.weight]
   ).then(result => {
     // send back object
     res.send(result.rows[0]);
   })
     .catch(next);
 });
-app.put('/api/me/sets', (req, res, next) => {
-  console.log('updating sets');
+app.put('/api/me/logs', (req, res, next) => {
+  console.log('updating logs');
   const body = req.body;
   console.log(body);
 
   client.query(`
-    UPDATE sets
+    UPDATE logs
     SET 
       movement_id = $2, 
       workout_id = $3,
-      weight = $4,
-      reps = $5
+      attempted = $4,
+      completed = $5,
+      weight = $6
     WHERE id = $1
     RETURNING *;
   `,
-  [body.id, body.movement_id, body.workout_id, body.weight, body.reps]
+  [body.id, body.movement_id, body.workout_id, body.attempted, body.completed, body.weight]
   )
     .then(result => {
       res.send(result.rows[0]);
@@ -481,11 +399,11 @@ app.put('/api/me/sets', (req, res, next) => {
     .catch(next);
   
 });
-app.delete('/api/me/sets', (req, res, next) => {
+app.delete('/api/me/logs', (req, res, next) => {
   const body = req.body;
 
   client.query(`
-    DELETE FROM sets WHERE id=$1;
+    DELETE FROM logs WHERE id=$1;
   `,
   [body.id]
   ).then(() => {

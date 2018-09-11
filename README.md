@@ -2,11 +2,6 @@
 
 ## TODO
 
-* get post to sets working
-* get post to programs working
-* either delete the get users function or keep it if there is reason to
-
-
-## NOTES
-
-* do we want to add descriptions back into the get movements server route?
+* record lifetime and recent maxes per lift per user (use this to calculate weights)
+* document the API
+  * show what a particular method will expect in the body for posts

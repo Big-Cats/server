@@ -2,23 +2,37 @@
   {
     "program_id": 1,
     "movement_id": 1,
-    "sets": 5,
     "reps": 5,
     "weight_percentage": 80
   },
   {
     "program_id": 1,
     "movement_id": 1,
-    "sets": 5,
     "reps": 5,
     "weight_percentage": 80
   },
   {
     "program_id": 1,
     "movement_id": 1,
-    "sets": 5,
+    "reps": 5,
+    "weight_percentage": 80
+  },
+  {
+    "program_id": 1,
+    "movement_id": 2,
+    "reps": 5,
+    "weight_percentage": 80
+  },
+  {
+    "program_id": 1,
+    "movement_id": 2,
+    "reps": 5,
+    "weight_percentage": 80
+  },
+  {
+    "program_id": 1,
+    "movement_id": 2,
     "reps": 5,
     "weight_percentage": 80
   }
-  
 ]
