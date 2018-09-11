@@ -161,77 +161,48 @@ app.get('/api/programs', (req, res, next) => {
 });
 
 
-// app.get('/api/me/workouts', (req, res, next) => {
-
-//   client.query(`
-//     SELECT 
-//       pm.program_id,
-//       m.name as "movement",
-//       pm.sets, 
-//       pm.reps, 
-//       pm.weight_percentage
-//     FROM programs_to_movements pm
-//     LEFT JOIN movements m
-//     ON pm.movement_id = m.id;
-  
-//       select
-//         w.id,
-//         w.date,
-//       from workouts w;
-//   `
-//   )
-//     .then(result => {
-//       const programMovements = result[0].rows;
-//       const programs = result[1].rows;
-//       function pmSelector(val) {
-//         return programMovements.filter(pm => pm.program_id === val);
-//       }
-//       programs.forEach(program => {
-//         const programId = program.id;
-//         program.exercises = [];
-//         program.exercises.push(pmSelector(programId));
-//       });
-
-//       res.send(programs);
-//     })
-//     .catch(next);
-// });
-
-
 app.get('/api/me/workouts', (req, res, next) => {
 
   const workoutsPromise = client.query(`
-    select id, date
-    from workouts w
-    where w.user_id = $1;
+    SELECT 
+      id, 
+      date
+    FROM workouts w
+    WHERE w.user_id = $1;
   `,
   [req.userId]);
 
   const exercisesPromise = client.query(`
     SELECT 
-      e.workout_id,
+      w.id,
       m.name as "movement",
-      e.sets, 
-      e.reps, 
-      e.weight
-    FROM exercises e
-    WHERE user_id = $1
-    LEFT JOIN movements m
-    ON e.movement_id = m.id;
+      e.weight,
+      e.reps,
+      e.sets
+    FROM workouts w
+    INNER JOIN exercises e ON w.id = e.workout_id
+    LEFT JOIN movements m ON e.movement_id = m.id
+    WHERE w.user_id = $1;
   `,
   [req.userId]);
 
   Promise.all([workoutsPromise, exercisesPromise])
     .then(promiseValues => {
-      const workoutsResult = promiseValues[0];
-      const exercisesResult = promiseValues[1];
+      const workouts = promiseValues[0].rows;
+      const exercises = promiseValues[1].rows;
 
-      if(workoutsResult.rows.length === 0 || exercisesResult.rows.length === 0) {
+      if(workouts.length === 0 || exercises.length === 0) {
         res.sendStatus(404);
         return;
       }
+      function exerciseSelector(val) {
+        return exercises.filter(e => e.id === val);
+      }
+      workouts.forEach(workout => {
+        workout.exercises = exerciseSelector(workout.id);
+      });
 
-      res.send(workoutsResult);
+      res.send(workouts);
     })
     .catch(next);
 });
