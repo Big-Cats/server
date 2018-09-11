@@ -310,6 +310,29 @@ app.post('/api/me/exercises', (req, res, next) => {
     .catch(next);
 });
 
+
+
+app.delete('/api/me/workouts/:id', (req, res, next) => {
+
+  const exercisesPromise = client.query(`
+    delete from exercises where workout_id = $1;
+  `,
+  [req.userId]);
+  const setsPromise = client.query(`
+    delete from sets where workout_id = $1;
+  `,
+  [req.userId]);
+  const workoutsPromise = client.query(`
+    delete from workouts where id=$1;
+  `,
+  [req.params.id]);
+
+  Promise.all([exercisesPromise, setsPromise, workoutsPromise])
+    .then(
+      res.send({ removed: true })
+    )
+    .catch(next);
+});
 app.delete('/api/me/exercises/:id', (req, res, next) => {
   client.query(`
     delete from exercises where id=$1;
@@ -322,7 +345,7 @@ app.delete('/api/me/exercises/:id', (req, res, next) => {
 });
 app.delete('/api/me/sets/:id', (req, res, next) => {
   client.query(`
-    delete from neighborhoods where id=$1;
+    delete from sets where id=$1;
   `,
   [req.params.id]
   ).then(() => {
@@ -330,6 +353,7 @@ app.delete('/api/me/sets/:id', (req, res, next) => {
   })
     .catch(next);
 });
+
 
 
 
