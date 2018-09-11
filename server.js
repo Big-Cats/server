@@ -270,7 +270,7 @@ app.get('/api/me/workouts', (req, res, next) => {
         return;
       }
       function logSelector(val) {
-        return logs.filter(e => e.id === val);
+        return logs.filter(l => l.id === val);
       }
       workouts.forEach(workout => {
         workout.exercises = logSelector(workout.id);
