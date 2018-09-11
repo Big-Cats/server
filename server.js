@@ -311,30 +311,6 @@ app.put('/api/me/goals', (req, res) => {
   
 });
 
-// users
-// app.get('/api/users', (req, res, next) => {
-
-//   client.query(`
-//     SELECT 
-//       u.id, u.email,
-//       count(g.id) as "goalCount"
-//     FROM users u 
-//     JOIN goals g
-//     on u.id = g.user_id
-//     group by u.id
-//     order by u.email;
-//   `)
-//     .then(result => {
-//       res.send(result.rows);
-//     })
-//     // we don't need the wrapper function:
-//     // .catch(err => {
-//     //   next(err);
-//     // });
-//     // we can just pass next _as_ the error callback function:
-//     .catch(next);
-// });
-
 app.get('/api/users', (req, res) => {
   client.query(`
   SELECT
