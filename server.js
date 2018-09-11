@@ -309,25 +309,26 @@ app.post('/api/me/exercises', (req, res, next) => {
   })
     .catch(next);
 });
-app.put('/api/me/exercises', (req, res) => {
+app.put('/api/me/exercises', (req, res, next) => {
   console.log('posting');
   const body = req.body;
   client.query(`
     UPDATE exercises
-    SET movement_id = $2, 
+    SET 
+      movement_id = $2, 
       workout_id = $3,
-      weight = $4,
-      reps = $5,
-      sets = $6
+      reps = $4,
+      sets = $5,
+      weight = $6
     WHERE id = $1
     RETURNING *;
   `,
-  [body.id, body.movement_id, body.workout_id, body.weight, body.reps, body.sets]
+  [body.id, body.movement_id, body.workout_id, body.reps, body.sets, body.weight]
   )
     .then(result => {
       res.send(result.rows[0]);
     })
-    .catch(err => console.log(err));
+    .catch(next);
   
 });
 
@@ -401,27 +402,47 @@ app.post('/api/me/sets', (req, res, next) => {
     .catch(next);
 });
 
-app.put('/api/me/sets', (req, res) => {
-  console.log('posting');
+
+app.put('/api/me/sets', (req, res, next) => {
+  console.log('updating sets');
   const body = req.body;
+  console.log(body);
+
   client.query(`
-    UPDATE goals
-    SET description = $2, 
-      completed = $3, 
-      user_id = $4
+    UPDATE sets
+    SET 
+      movement_id = $2, 
+      workout_id = $3,
+      weight = $4,
+      reps = $5
     WHERE id = $1
-    RETURNING *, user_id as "userId";
+    RETURNING *;
   `,
-  [body.id, body.description, body.completed, req.userId]
+  [body.id, body.movement_id, body.workout_id, body.weight, body.reps]
   )
     .then(result => {
       res.send(result.rows[0]);
     })
-    .catch(err => console.log(err));
+    .catch(next);
   
 });
 
+app.post('/api/programs', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
 
+  client.query(`
+    insert into goals (user_id, description, completed)
+    values ($1, $2, $3)
+    returning *, user_id as "userId";
+  `,
+  [req.userId, body.description, body.completed]
+  ).then(result => {
+    // send back object
+    res.send(result.rows[0]);
+  })
+    .catch(next);
+});
 
 
 

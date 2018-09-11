@@ -3,18 +3,18 @@
     "workout_id": 1,
     "movement_id": 1,
     "reps": 5,
-    "weight": "135"
+    "weight": 135
   },
   {
     "workout_id": 1,
     "movement_id": 1,
     "reps": 5,
-    "weight": "155"
+    "weight": 155
   },
   {
     "workout_id": 1,
     "movement_id": 1,
     "reps": 5,
-    "weight": "185"
+    "weight": 185
   }
 ]
