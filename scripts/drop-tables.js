@@ -2,8 +2,7 @@ require('dotenv').config();
 const client = require('../db-client');
 
 client.query(`
-  DROP TABLE IF EXISTS sets;
-  DROP TABLE IF EXISTS exercises;
+  DROP TABLE IF EXISTS logs;
   DROP TABLE IF EXISTS workouts;
   DROP TABLE IF EXISTS programs_to_movements;
   DROP TABLE IF EXISTS programs;

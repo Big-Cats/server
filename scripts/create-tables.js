@@ -30,7 +30,6 @@ client.query(`
       id SERIAL PRIMARY KEY,
       program_id INTEGER NOT NULL REFERENCES programs(id),
       movement_id INTEGER NOT NULL REFERENCES movements(id),
-      sets INTEGER,
       reps INTEGER,
       weight_percentage INTEGER
     );
@@ -39,19 +38,12 @@ client.query(`
       user_id INTEGER NOT NULL REFERENCES users(id),
       date DATE NOT NULL DEFAULT CURRENT_DATE
     );
-    CREATE TABLE IF NOT EXISTS exercises (
-      id SERIAL PRIMARY KEY,
-      movement_id INTEGER NOT NULL REFERENCES movements(id),
-      workout_id INTEGER NOT NULL REFERENCES workouts(id),
-      sets INTEGER,
-      reps INTEGER,
-      weight INTEGER
-    );
-    CREATE TABLE IF NOT EXISTS sets (
+    CREATE TABLE IF NOT EXISTS logs (
       id SERIAL PRIMARY KEY,
       workout_id INTEGER NOT NULL REFERENCES workouts(id),
       movement_id INTEGER NOT NULL REFERENCES movements(id),
-      reps INTEGER,
+      attempted INTEGER,
+      completed INTEGER,
       weight INTEGER
     );
 `)

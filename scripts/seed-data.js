@@ -1,12 +1,11 @@
 require('dotenv').config();
 const client = require('../db-client');
 const users = require('./data/users.json');
-const exercises = require('./data/exercises.json');
 const movements = require('./data/movements.json');
 const muscles = require('./data/muscles.json');
 const programs_to_movements = require('./data/programs_to_movements.json');
 const programs = require('./data/programs.json');
-const sets = require('./data/sets.json');
+const logs = require('./data/logs.json');
 const workouts = require('./data/workouts.json');
 
 
@@ -75,13 +74,12 @@ Promise.all(
             INSERT INTO programs_to_movements (
               program_id, 
               movement_id,
-              sets,
               reps,
               weight_percentage
             )
-            VALUES ($1, $2, $3, $4, $5);
+            VALUES ($1, $2, $3, $4);
         `,
-        [item.program_id, item.movement_id, item.sets, item.reps, item.weight_percentage]
+        [item.program_id, item.movement_id, item.reps, item.weight_percentage]
         ).then(result => result.rows[0]);
       })
     );
@@ -103,35 +101,18 @@ Promise.all(
   })
   .then(() => {
     return Promise.all(
-      exercises.map(exercise => {
+      logs.map(log => {
         return client.query(`
-            INSERT INTO exercises (
-              workout_id,
+            INSERT INTO logs (
+              workout_id, 
               movement_id, 
-              sets,
-              reps,
+              attempted,
+              completed,
               weight
             )
             VALUES ($1, $2, $3, $4, $5);
         `,
-        [exercise.movement_id, exercise.workout_id, exercise.sets, exercise.reps, exercise.weight]
-        ).then(result => result.rows[0]);
-      })
-    );
-  })
-  .then(() => {
-    return Promise.all(
-      sets.map(set => {
-        return client.query(`
-            INSERT INTO sets (
-              workout_id, 
-              movement_id, 
-              reps,
-              weight
-            )
-            VALUES ($1, $2, $3, $4);
-        `,
-        [set.workout_id, set.movement_id, set.reps, set.weight]
+        [log.workout_id, log.movement_id, log.attempted, log.completed, log.weight]
         ).then(result => result.rows[0]);
       })
     );
