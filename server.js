@@ -150,7 +150,6 @@ app.get('/api/muscles', (req, res, next) => {
     .catch(next);
 });
 
-
 // movements
 app.get('/api/movements', (req, res, next) => {
 
