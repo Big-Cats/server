@@ -8,6 +8,7 @@ client.query(`
   DROP TABLE IF EXISTS programs_to_movements;
   DROP TABLE IF EXISTS programs;
   DROP TABLE IF EXISTS movements;
+  DROP TABLE IF EXISTS muscles;
   DROP TABLE IF EXISTS users;
 `)
   .then(

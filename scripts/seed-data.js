@@ -3,6 +3,7 @@ const client = require('../db-client');
 const users = require('./data/users.json');
 const exercises = require('./data/exercises.json');
 const movements = require('./data/movements.json');
+const muscles = require('./data/muscles.json');
 const programs_to_movements = require('./data/programs_to_movements.json');
 const programs = require('./data/programs.json');
 const sets = require('./data/sets.json');
@@ -21,17 +22,32 @@ Promise.all(
 )
   .then(() => {
     return Promise.all(
+      muscles.map(muscle => {
+        return client.query(`
+            INSERT INTO muscles (
+              user_id,
+              name
+            )
+            VALUES ($1, $2);
+        `,
+        [muscle.user_id, muscle.name]
+        ).then(result => result.rows[0]);
+      })
+    );
+  })
+  .then(() => {
+    return Promise.all(
       movements.map(movement => {
         return client.query(`
             INSERT INTO movements (
               user_id,
               name, 
-              muscle,
+              muscle_id,
               description
             )
             VALUES ($1, $2, $3, $4);
         `,
-        [movement.user_id, movement.name, movement.muscle, movement.description]
+        [movement.user_id, movement.name, movement.muscle_id, movement.description]
         ).then(result => result.rows[0]);
       })
     );
