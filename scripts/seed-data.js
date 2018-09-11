@@ -90,8 +90,8 @@ Promise.all(
       exercises.map(exercise => {
         return client.query(`
             INSERT INTO exercises (
-              movement_id, 
               workout_id,
+              movement_id, 
               sets,
               reps,
               weight

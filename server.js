@@ -107,7 +107,6 @@ app.use((req, res, next) => {
 
 // api data routes
 
-// do we want to get all users for any reason?
 app.get('/api/users', (req, res) => {
   client.query(`
   SELECT
@@ -275,6 +274,7 @@ app.get('/api/me/sets', (req, res, next) => {
     .catch(next);
 });
 
+
 app.post('/api/me/workouts', (req, res, next) => {
   
   client.query(`
@@ -293,11 +293,11 @@ app.post('/api/me/exercises', (req, res, next) => {
   if(body.description === 'error') return next('bad name');
 
   client.query(`
-    insert into exercises (movement_id, workout_id, sets, reps, weight)
+    insert into exercises (workout_id, movement_id, sets, reps, weight)
     values ($1, $2, $3, $4, $5)
     returning *;
   `,
-  [req.userId, body.movement_id, body.workout_id, body.sets, body.reps, body.weight]
+  [body.workout_id, body.movement_id, body.sets, body.reps, body.weight]
   ).then(result => {
     // send back object
     res.send(result.rows[0]);
@@ -309,11 +309,11 @@ app.post('/api/me/sets', (req, res, next) => {
   if(body.description === 'error') return next('bad name');
 
   client.query(`
-    insert into goals (user_id, description, completed)
-    values ($1, $2, $3)
-    returning *, user_id as "userId";
+    insert into sets (workout_id, movement_id, reps, weight)
+    values ($1, $2, $3, $4)
+    returning *;
   `,
-  [req.userId, body.description, body.completed]
+  [body.workout_id, body.movement_id, body.reps, body.weight]
   ).then(result => {
     // send back object
     res.send(result.rows[0]);
