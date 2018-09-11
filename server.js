@@ -207,6 +207,20 @@ app.get('/api/me/workouts', (req, res, next) => {
     .catch(next);
 });
 
+app.post('/api/me/workouts', (req, res, next) => {
+  
+  client.query(`
+    INSERT INTO workouts (user_id)
+    VALUES ($1)
+    RETURNING *;
+  `,
+  [req.userId]
+  ).then(result => {
+    res.send(result.rows[0]);
+  })
+    .catch(next);
+});
+
 
 app.get('/api/me/sets', (req, res, next) => {
 
