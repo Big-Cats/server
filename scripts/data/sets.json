@@ -1,16 +1,19 @@
 [
   {
-    "exercise_id": 1,
+    "workout_id": 1,
+    "movement_id": 1,
     "reps": 5,
     "weight": "135"
   },
   {
-    "exercise_id": 1,
+    "workout_id": 1,
+    "movement_id": 1,
     "reps": 5,
     "weight": "155"
   },
   {
-    "exercise_id": 1,
+    "workout_id": 1,
+    "movement_id": 1,
     "reps": 5,
     "weight": "185"
   }

@@ -43,7 +43,8 @@ client.query(`
     );
     CREATE TABLE IF NOT EXISTS sets (
       id SERIAL PRIMARY KEY,
-      exercise_id INTEGER NOT NULL REFERENCES exercises(id),
+      workout_id INTEGER NOT NULL REFERENCES workouts(id),
+      movement_id INTEGER NOT NULL REFERENCES movements(id),
       reps INTEGER,
       weight INTEGER
     );

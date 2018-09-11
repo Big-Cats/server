@@ -108,13 +108,14 @@ Promise.all(
       sets.map(set => {
         return client.query(`
             INSERT INTO sets (
-              exercise_id, 
+              workout_id, 
+              movement_id, 
               reps,
               weight
             )
-            VALUES ($1, $2, $3);
+            VALUES ($1, $2, $3, $4);
         `,
-        [set.exercise_id, set.reps, set.weight]
+        [set.workout_id, set.movement_id, set.reps, set.weight]
         ).then(result => result.rows[0]);
       })
     );
