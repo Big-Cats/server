@@ -903,14 +903,10 @@ zottman preacher curl, biceps`;
 const regex = /, |\n/g ;
 const sorted = data.split(regex);
 
-let muscleArr = sorted.filter((value, index) => index % 2 === 1)
+const muscleArr = sorted.filter((value, index) => index % 2 === 1)
   .filter((value, index, self) => {
     return self.indexOf(value) === index;
   });
-
-
-// const muscSet = new Set([...sorted.filter((item, index) => index % 2 === 1)]);
-// const muscArr = [...muscSet];
 
 const muscles = [];
 muscleArr.forEach((value1) => {
@@ -929,8 +925,15 @@ for(let i = 0; i < sorted.length; i += 2){
   });
 }
 
+const uniqueMovements = movements.filter((value, index, self) => {
+  const firstWithName = self.find(element => {
+    return element.name === value.name;
+  });
+  return index === self.indexOf(firstWithName);
+});
+
 const musclesJSON = JSON.stringify(muscles);
-const movementsJSON = JSON.stringify(movements);
+const movementsJSON = JSON.stringify(uniqueMovements);
 
 const fs = require('fs');
 
