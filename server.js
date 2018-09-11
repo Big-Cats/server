@@ -107,6 +107,34 @@ app.use((req, res, next) => {
 
 // api data routes
 
+// do we want to get all users for any reason?
+app.get('/api/users', (req, res) => {
+  client.query(`
+  SELECT
+  g.id,
+  g.user_id as "userId",
+  g.description,
+  g.completed
+  FROM goals g;
+  
+    SELECT
+    u.id, 
+    u.email
+    FROM users u;
+  `)
+    .then(result => {
+      const goals = result[0].rows;
+      const users = result[1].rows;
+      users.forEach(user => {
+        user.goals = goals.filter(goal => {
+          return goal.userId === user.id;
+        });
+      });
+      res.send(users);
+    })
+    .catch(err => console.log(err));
+});
+
 app.get('/api/movements', (req, res, next) => {
 
   client.query(`
@@ -159,7 +187,6 @@ app.get('/api/programs', (req, res, next) => {
     })
     .catch(next);
 });
-
 
 app.get('/api/me/workouts', (req, res, next) => {
 
@@ -221,23 +248,47 @@ app.post('/api/me/workouts', (req, res, next) => {
     .catch(next);
 });
 
-
 app.get('/api/me/sets', (req, res, next) => {
 
-  client.query(`
-    select 
+  const workoutsPromise = client.query(`
+    SELECT 
       id, 
-      user_id as "userId", 
-      description, 
-      completed
-    from goals
-    where user_id = $1
-    order by description;
+      date
+    FROM workouts w
+    WHERE w.user_id = $1;
   `,
-  [req.userId]
-  )
-    .then(result => {
-      res.send(result.rows);
+  [req.userId]);
+
+  const setsPromise = client.query(`
+    SELECT 
+      w.id,
+      m.name as "movement",
+      s.weight,
+      s.reps
+    FROM workouts w
+    INNER JOIN sets s ON w.id = s.workout_id
+    LEFT JOIN movements m ON s.movement_id = m.id
+    WHERE w.user_id = $1;
+  `,
+  [req.userId]);
+
+  Promise.all([workoutsPromise, setsPromise])
+    .then(promiseValues => {
+      const workouts = promiseValues[0].rows;
+      const sets = promiseValues[1].rows;
+
+      if(workouts.length === 0 || sets.length === 0) {
+        res.sendStatus(404);
+        return;
+      }
+      function setSelector(val) {
+        return sets.filter(s => s.id === val);
+      }
+      workouts.forEach(workout => {
+        workout.exercises = setSelector(workout.id);
+      });
+
+      res.send(workouts);
     })
     .catch(next);
 });
@@ -258,6 +309,10 @@ app.post('/api/me/exercises', (req, res, next) => {
   })
     .catch(next);
 });
+
+
+
+
 
 app.post('/api/me/goals', (req, res, next) => {
   const body = req.body;
@@ -296,32 +351,7 @@ app.put('/api/me/goals', (req, res) => {
   
 });
 
-app.get('/api/users', (req, res) => {
-  client.query(`
-  SELECT
-  g.id,
-  g.user_id as "userId",
-  g.description,
-  g.completed
-  FROM goals g;
-  
-    SELECT
-    u.id, 
-    u.email
-    FROM users u;
-  `)
-    .then(result => {
-      const goals = result[0].rows;
-      const users = result[1].rows;
-      users.forEach(user => {
-        user.goals = goals.filter(goal => {
-          return goal.userId === user.id;
-        });
-      });
-      res.send(users);
-    })
-    .catch(err => console.log(err));
-});
+
 
 
 
