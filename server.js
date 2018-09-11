@@ -273,6 +273,27 @@ app.post('/api/me/exercises', (req, res, next) => {
   })
     .catch(next);
 });
+app.put('/api/me/exercises', (req, res) => {
+  console.log('posting');
+  const body = req.body;
+  client.query(`
+    UPDATE exercises
+    SET movement_id = $2, 
+      workout_id = $3,
+      weight = $4,
+      reps = $5,
+      sets = $6
+    WHERE id = $1
+    RETURNING *;
+  `,
+  [body.id, body.movement_id, body.workout_id, body.weight, body.reps, body.sets]
+  )
+    .then(result => {
+      res.send(result.rows[0]);
+    })
+    .catch(err => console.log(err));
+  
+});
 
 app.post('/api/me/goals', (req, res, next) => {
   const body = req.body;
