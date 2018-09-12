@@ -383,8 +383,8 @@ app.put('/api/me/logs', (req, res, next) => {
   client.query(`
     UPDATE logs
     SET 
-      movement_id = $2, 
-      workout_id = $3,
+      workout_id = $2,
+      movement_id = $3, 
       attempted = $4,
       completed = $5,
       weight = $6
