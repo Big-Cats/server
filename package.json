@@ -16,7 +16,8 @@
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "exit 0",
-    "start": "nodemon server.js"
+    "start": "node server.js",
+    "start:watch": "nodemon server.js"
   },
   "license": "ISC",
   "dependencies": {
