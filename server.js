@@ -269,21 +269,25 @@ app.get('/api/me/workouts', (req, res, next) => {
         res.sendStatus(404);
         return;
       }
-
+      
       workouts.map(workout => {
         workout.exercises = logs.filter(log => log.id === workout.id)
           .reduce((acc, obj) => {
-            const key = obj['movement'];
-            if(!acc[key]) {
-              acc[key] = [];
+            if(!acc.some(item => item.key)){
+              acc.push({
+                movement: obj.movement, 
+                sets: []
+              });
             }
-            acc[key].push({
+            acc.find((item) => {
+              return item.movement === obj.movement;
+            }).sets.push({
               attempted: obj.attempted,
               completed: obj.completed,
               weight: obj.weight
             });
             return acc;
-          }, {});
+          }, []);
       });
 
       res.send(workouts);
