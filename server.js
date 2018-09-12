@@ -269,11 +269,11 @@ app.get('/api/me/workouts', (req, res, next) => {
         res.sendStatus(404);
         return;
       }
-      
+
       workouts.map(workout => {
         workout.exercises = logs.filter(log => log.id === workout.id)
           .reduce((acc, obj) => {
-            if(!acc.some(item => item.key)){
+            if(!acc.some((item) => item.movement === obj.movement)){
               acc.push({
                 movement: obj.movement, 
                 sets: []
