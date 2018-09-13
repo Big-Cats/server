@@ -249,6 +249,7 @@ app.get('/api/me/workouts', (req, res, next) => {
   const logsPromise = client.query(`
     SELECT 
       w.id,
+      l.id as "logId",
       m.name as "movement",
       l.attempted,
       l.completed,
@@ -282,6 +283,7 @@ app.get('/api/me/workouts', (req, res, next) => {
             acc.find((item) => {
               return item.movement === obj.movement;
             }).sets.push({
+              logId: obj.logId,
               attempted: obj.attempted,
               completed: obj.completed,
               weight: obj.weight
