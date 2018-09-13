@@ -453,9 +453,9 @@ app.delete('/api/me/logs', (req, res, next) => {
     .catch(next);
 });
 
-app.use((req, res) => {
-  res.sendFile('index.html', { root: 'public' });
-});
+// app.use((req, res) => {
+//   res.sendFile('index.html', { root: 'public' });
+// });
 
 
 // start "listening" (run) the app (server)
