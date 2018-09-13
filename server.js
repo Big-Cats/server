@@ -98,12 +98,12 @@ app.use((req, res, next) => {
     });
     return;
   }
-
   // 1. set req.userId to the header
   req.userId = id;
   // 2. call next()
   next();
 });
+
 
 // api data routes
 
@@ -453,6 +453,9 @@ app.delete('/api/me/logs', (req, res, next) => {
     .catch(next);
 });
 
+app.use((req, res) => {
+  res.sendFile('index.html', { root: 'public' });
+});
 
 
 // start "listening" (run) the app (server)
