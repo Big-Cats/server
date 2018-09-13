@@ -300,17 +300,41 @@ app.get('/api/me/workouts', (req, res, next) => {
     .catch(next);
 });
 app.post('/api/me/workouts', (req, res, next) => {
+  console.log('adding workout');
+  const body = req.body;
 
   client.query(`
     INSERT INTO workouts (user_id)
     VALUES ($1)
-    RETURNING *;
+    RETURNING *;  
   `,
-  [req.userId]
-  ).then(result => {
-    res.send(result.rows[0]);
-  })
-    .catch(next);
+  [req.userId])
+    .then(results => {
+
+      const returnVal = results.rows[0];
+      const workoutId = results.rows[0].id;
+
+      client.query(`
+        INSERT INTO
+          logs (workout_id, movement_id, attempted, completed)
+        SELECT
+          ${workoutId},
+          pm.movement_id,
+          pm.reps,
+          0
+        FROM
+          programs_to_movements pm
+        WHERE
+          program_id = $1
+        RETURNING *;
+      `,
+      [body.id])
+        .then(() => {
+          res.send(returnVal);
+        })
+        .catch(next);
+    });
+
 });
 app.delete('/api/me/workouts', (req, res, next) => {
   console.log('deleting workouts');
