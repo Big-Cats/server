@@ -242,7 +242,8 @@ app.get('/api/me/workouts', (req, res, next) => {
       id, 
       date
     FROM workouts w
-    WHERE w.user_id = $1;
+    WHERE w.user_id = $1
+    ORDER BY w.id;
   `,
   [req.userId]);
 
@@ -257,7 +258,9 @@ app.get('/api/me/workouts', (req, res, next) => {
     FROM workouts w
     INNER JOIN logs l ON w.id = l.workout_id
     LEFT JOIN movements m ON l.movement_id = m.id
-    WHERE w.user_id = $1;
+    WHERE w.user_id = $1
+    ORDER BY l.id;
+
   `,
   [req.userId]);
 
@@ -398,16 +401,14 @@ app.put('/api/me/logs', (req, res, next) => {
 
   client.query(`
     UPDATE logs
-    SET 
-      workout_id = $2,
-      movement_id = $3, 
-      attempted = $4,
-      completed = $5,
-      weight = $6
+    SET
+      attempted = $2,
+      completed = $3,
+      weight = $4
     WHERE id = $1
     RETURNING *;
   `,
-  [body.id, body.movement_id, body.workout_id, body.attempted, body.completed, body.weight]
+  [body.id, body.attempted, body.completed, body.weight]
   )
     .then(result => {
       res.send(result.rows[0]);
