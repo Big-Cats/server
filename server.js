@@ -269,10 +269,10 @@ app.get('/api/me/workouts', (req, res, next) => {
       const workouts = promiseValues[0].rows;
       const logs = promiseValues[1].rows;
 
-      if(workouts.length === 0 || logs.length === 0) {
-        res.sendStatus(404);
-        return;
-      }
+      // if(workouts.length === 0 || logs.length === 0) {
+      //   res.sendStatus(404);
+      //   return;
+      // }
 
       workouts.map(workout => {
         workout.exercises = logs.filter(log => log.id === workout.id)
@@ -363,10 +363,10 @@ app.get('/api/me/logs', (req, res, next) => {
       const workouts = promiseValues[0].rows;
       const logs = promiseValues[1].rows;
 
-      if(workouts.length === 0 || logs.length === 0) {
-        res.sendStatus(404);
-        return;
-      }
+      // if(workouts.length === 0 || logs.length === 0) {
+      //   res.sendStatus(404);
+      //   return;
+      // }
       function logSelector(val) {
         return logs.filter(l => l.id === val);
       }
