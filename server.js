@@ -321,7 +321,7 @@ app.post('/api/me/workouts', (req, res, next) => {
           ${workoutId},
           pm.movement_id,
           pm.reps,
-          0
+          null
         FROM
           programs_to_movements pm
         WHERE

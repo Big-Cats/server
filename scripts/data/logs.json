@@ -10,14 +10,14 @@
     "workout_id": 1,
     "movement_id": 1,
     "attempted": 5,
-    "completed": 5,
+    "completed": 3,
     "weight": 155
   },
   {
     "workout_id": 1,
     "movement_id": 1,
     "attempted": 5,
-    "completed": 0,
+    "completed": null,
     "weight": 185
   },
   {
@@ -38,7 +38,7 @@
     "workout_id": 1,
     "movement_id": 2,
     "attempted": 5,
-    "completed": 0,
+    "completed": null,
     "weight": 185
   },
   {
