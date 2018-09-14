@@ -2,7 +2,7 @@
 
 ## TODO
 
-* record lifetime and recent maxes per lift per user (use this to calculate weights)
+* record lifetime and recent maxes per lift per user (use this to calculate weights when going from program -> new logs)
 * document the API
   * show what a particular method will expect in the body for posts
 
