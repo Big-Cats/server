@@ -1,9 +1,13 @@
 [
   {
+    "first": "Thor",
+    "last": "Williams",
     "email": "admin",
     "password": "password"
   },
   {
+    "first": "Mr",
+    "last": "Mister",
     "email": "test@test.com",
     "password": "password"
   }
