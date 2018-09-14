@@ -19,10 +19,11 @@ app.use(express.static('public'));
 // connect to database
 const client = require('./db-client');
 
-// auth routes
-
+// auth
 app.post('/api/auth/signup', (req, res) => {
   const body = req.body;
+  const first = body.first;
+  const last = body.last;
   const email = body.email;
   const password = body.password;
 
@@ -46,16 +47,15 @@ app.post('/api/auth/signup', (req, res) => {
       }
 
       client.query(`
-        INSERT INTO users (email, password)
-        VALUES ($1, $2)
-        RETURNING id, email
+        INSERT INTO users (first, last, email, password)
+        VALUES ($1, $2, $3, $4)
+        RETURNING first, last, id, email
       `,
-      [email, password])
+      [first, last, email, password])
         .then(results => {
           res.send(results.rows[0]);
         });
     });
-
 });
 app.post('/api/auth/signin', (req, res) => {
   const body = req.body;
@@ -103,9 +103,6 @@ app.use((req, res, next) => {
   // 2. call next()
   next();
 });
-
-
-// api data routes
 
 // muscles
 app.get('/api/muscles', (req, res, next) => {
@@ -452,6 +449,41 @@ app.delete('/api/me/logs', (req, res, next) => {
   })
     .catch(next);
 });
+
+// maxes
+app.get('/api/maxes', (req, res, next) => {
+  client.query(`
+    SELECT id, user_id, movement_id, weight
+    FROM maxes
+    WHERE user_id=$1
+    ORDER BY weight;
+  `,
+  [req.userId]
+  )
+    .then(result => {
+      res.send(result.rows);
+    })
+    .catch(next);
+});
+app.post('/api/maxes', (req, res, next) => {
+  const body = req.body;
+  if(body.description === 'error') return next('bad name');
+
+  client.query(`
+    INSERT INTO maxes (user_id, movement_id, weight)
+    VALUES ($1, $2, $3)
+    RETURNING *;
+  `,
+  [req.userId, body.movement_id, body.weight]
+  )
+    .then(result => {
+      res.send(result.rows);
+    })
+    .catch(next);
+});
+
+
+
 
 // app.use((req, res) => {
 //   res.sendFile('index.html', { root: 'public' });

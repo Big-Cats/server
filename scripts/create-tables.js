@@ -4,6 +4,8 @@ const client = require('../db-client');
 client.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
+      first VARCHAR(256) NOT NULL,
+      last VARCHAR(256) NOT NULL,
       email VARCHAR(256) NOT NULL,
       password VARCHAR(256) NOT NULL
     );
@@ -45,6 +47,12 @@ client.query(`
       attempted INTEGER,
       completed INTEGER,
       weight INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS maxes (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      movement_id INTEGER NOT NULL REFERENCES movements(id),
+      weight INTEGER NOT NULL
     );
 `)
   .then(

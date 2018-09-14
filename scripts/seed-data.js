@@ -7,6 +7,7 @@ const programs_to_movements = require('./data/programs_to_movements.json');
 const programs = require('./data/programs.json');
 const logs = require('./data/logs.json');
 const workouts = require('./data/workouts.json');
+const maxes = require('./data/maxes.json');
 
 
 Promise.all(
@@ -113,6 +114,22 @@ Promise.all(
             VALUES ($1, $2, $3, $4, $5);
         `,
         [log.workout_id, log.movement_id, log.attempted, log.completed, log.weight]
+        ).then(result => result.rows[0]);
+      })
+    );
+  })
+  .then(() => {
+    return Promise.all(
+      maxes.map(max => {
+        return client.query(`
+            INSERT INTO maxes (
+              user_id, 
+              movement_id, 
+              weight
+            )
+            VALUES ($1, $2, $3);
+        `,
+        [max.user_id, max.movement_id, max.weight]
         ).then(result => result.rows[0]);
       })
     );
