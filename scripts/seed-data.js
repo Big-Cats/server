@@ -13,10 +13,10 @@ const maxes = require('./data/maxes.json');
 Promise.all(
   users.map(user => {
     return client.query(`
-        INSERT INTO users (email, password)
-        VALUES ($1, $2);
+        INSERT INTO users (first, last, email, password)
+        VALUES ($1, $2, $3, $4);
     `,
-    [user.email, user.password]
+    [user.first, user.last, user.email, user.password]
     ).then(result => result.rows[0]);
   })
 )
