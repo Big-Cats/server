@@ -57,6 +57,7 @@ app.post('/api/auth/signup', (req, res) => {
         });
     });
 });
+
 app.post('/api/auth/signin', (req, res) => {
   const body = req.body;
   const email = body.email;
@@ -88,6 +89,7 @@ app.post('/api/auth/signin', (req, res) => {
       });
     });
 });
+
 app.use((req, res, next) => {
   // is there a Authorization header?
   const id = req.get('Authorization');
@@ -138,8 +140,11 @@ app.get('/api/movements', (req, res, next) => {
     })
     .catch(next);
 });
+
 app.post('/api/movements', (req, res, next) => {
   const body = req.body;
+  // Why would your app be sending a request it knows is erroneous?
+  // Why would your server believe the client?
   if(body.description === 'error') return next('bad name');
 
   client.query(`
@@ -168,31 +173,28 @@ app.get('/api/programs', (req, res, next) => {
     ON pm.movement_id = m.id
     ORDER BY pm.movement_id;
   
-      SELECT
-        p.id,
-        p.name,
-        p.description
-      FROM programs p;
+    SELECT
+      p.id,
+      p.name,
+      p.description
+    FROM programs p;
   `
   )
     .then(result => {
       const programMovements = result[0].rows;
       const programs = result[1].rows;
-      function pmSelector(val) {
-        return programMovements.filter(pm => pm.program_id === val);
-      }
-      programs.forEach(program => {
-        const programId = program.id;
-        program.exercises = pmSelector(programId);
-      });
 
+      programs.forEach(program => {
+        program.exercises = programMovements.filter(pm => pm.program_id === program.id);
+      });
+    
       res.send(programs);
     })
     .catch(next);
 });
+
 app.post('/api/programs', (req, res, next) => {
   const body = req.body;
-  if(body.description === 'error') return next('bad name');
 
   let programId;
 
@@ -202,32 +204,23 @@ app.post('/api/programs', (req, res, next) => {
     RETURNING *, user_id as "userId";
   `,
   [req.userId, body.name, body.description]
-  ).then(result => {
-    const program = result.rows[0];
-    programId = program.id;
-    res.send(result.rows[0]);
-  }
-  ).then(() => {
+  )
+    .then(result => result.rows[0])
+    .then(program => {
+      return Promise.all(body.exercises.map(exercise => {
+        return client.query(`
+          INSERT INTO programs_to_movements (program_id, movement_id, reps, weight_percentage)
+          VALUES ($1, $2, $3, $4)
+          RETURNING *, program_id as "programId";
+        `,
+        [programId, exercise.movement_id, exercise.reps, exercise.weight_percentage]);
+      }))
+        .then(exercises => {
+          program.exercises = exercises;
+          res.send(program);
+        });
 
-    const pToMovementsPromises = [];
-    
-    body.exercises.forEach(exercise => {
-      const promise = client.query(`
-        INSERT INTO programs_to_movements (program_id, movement_id, reps, weight_percentage)
-        VALUES ($1, $2, $3, $4)
-        RETURNING *, program_id as "programId";
-      `,
-      [programId, exercise.movement_id, exercise.reps, exercise.weight_percentage]);
-
-      pToMovementsPromises.push(promise);
-    });
-
-    return Promise.all([...pToMovementsPromises]);
-  }
-  ).then(result => {
-    // send back objects
-    res.send(result.rows);
-  })
+    })
     .catch(next);
 });
 
@@ -242,7 +235,8 @@ app.get('/api/me/workouts', (req, res, next) => {
     WHERE w.user_id = $1
     ORDER BY w.id;
   `,
-  [req.userId]);
+  [req.userId]
+  );
 
   const logsPromise = client.query(`
     SELECT 
@@ -266,36 +260,45 @@ app.get('/api/me/workouts', (req, res, next) => {
       const workouts = promiseValues[0].rows;
       const logs = promiseValues[1].rows;
 
-      // if(workouts.length === 0 || logs.length === 0) {
-      //   res.sendStatus(404);
-      //   return;
-      // }
-
-      workouts.map(workout => {
-        workout.exercises = logs.filter(log => log.id === workout.id)
-          .reduce((acc, obj) => {
-            if(!acc.some((item) => item.movement === obj.movement)){
-              acc.push({
-                movement: obj.movement, 
-                sets: []
-              });
+      // single pass through logs without 
+      // repetitive looping of accumlator
+      workouts.forEach(workout => {
+        const byMovement = logs
+          // only the logs for this workout
+          .filter(log => log.id === workout.id)
+          // use a dictionary to sort logs by key (with array value of logs)
+          .reduce((acc, log) => {
+            // add the array for this movement if it doesn't exist yet
+            if(!acc[log.movement]) {
+              acc[log.movement] = [];
             }
-            acc.find((item) => {
-              return item.movement === obj.movement;
-            }).sets.push({
-              logId: obj.logId,
-              attempted: obj.attempted,
-              completed: obj.completed,
-              weight: obj.weight
+
+            // push in the log to this dictionary key (movement)
+            acc[log.movement].push({
+              logId: log.logId,
+              attempted: log.attempted,
+              completed: log.completed,
+              weight: log.weight
             });
+
             return acc;
-          }, []);
+          }, {});
+
+        // Change the object to an array of objects
+        workout.exercises = Object.keys(byMovement)
+          .map(key => {
+            return {
+              movement: key,
+              sets: byMovement[key]
+            };
+          });
       });
 
       res.send(workouts);
     })
     .catch(next);
 });
+
 app.post('/api/me/workouts', (req, res, next) => {
   console.log('adding workout');
   const body = req.body;
@@ -307,52 +310,50 @@ app.post('/api/me/workouts', (req, res, next) => {
   `,
   [req.userId])
     .then(results => {
+      const workout = results.rows[0];
 
-      const returnVal = results.rows[0];
-      const workoutId = results.rows[0].id;
-
-      client.query(`
+      return client.query(`
         INSERT INTO
-          logs (workout_id, movement_id, attempted, completed)
+          logs (workout_id, movement_id, attempted)
         SELECT
-          ${workoutId},
+          $1,
           pm.movement_id,
-          pm.reps,
-          null
+          pm.reps
         FROM
           programs_to_movements pm
         WHERE
-          program_id = $1
+          program_id = $2
         RETURNING *;
       `,
-      [body.id])
+      [workout.id, body.id]
+      )
         .then(() => {
-          res.send(returnVal);
-        })
-        .catch(next);
-    });
-
+          res.send(workout);
+        });
+    })
+    .catch(next);
 });
+
 app.delete('/api/me/workouts', (req, res, next) => {
   console.log('deleting workouts');
   const body = req.body;
 
-  const logsPromise = client.query(`
-    DELETE FROM logs WHERE workout_id = $1;
-  `,
-  [body.id]);
-  const workoutsPromise = client.query(`
-    DELETE FROM workouts WHERE id=$1;
-  `,
-  [body.id]);
-
-  Promise.all([logsPromise, workoutsPromise])
+  Promise.all([
+    client.query(`
+      DELETE FROM logs WHERE workout_id = $1;
+    `, [body.id]), 
+    client.query(`
+      DELETE FROM workouts WHERE id=$1;
+    `, [body.id])
+  ])
     .then(() => {
       res.send({ removed: true });
     })
     .catch(next);
 });
 
+// How does this differ from GET /api/me/workouts?
+// (Other then the fact that these are not sorted into movements)
 // logs
 app.get('/api/me/logs', (req, res, next) => {
 
@@ -384,24 +385,17 @@ app.get('/api/me/logs', (req, res, next) => {
       const workouts = promiseValues[0].rows;
       const logs = promiseValues[1].rows;
 
-      // if(workouts.length === 0 || logs.length === 0) {
-      //   res.sendStatus(404);
-      //   return;
-      // }
-      function logSelector(val) {
-        return logs.filter(l => l.id === val);
-      }
       workouts.forEach(workout => {
-        workout.exercises = logSelector(workout.id);
+        workout.exercises = logs.filter(l => l.id === workout.id);
       });
 
       res.send(workouts);
     })
     .catch(next);
 });
+
 app.post('/api/me/logs', (req, res, next) => {
   const body = req.body;
-  if(body.description === 'error') return next('bad name');
 
   client.query(`
     INSERT INTO logs (workout_id, movement_id, attempted, completed, weight)
@@ -415,10 +409,10 @@ app.post('/api/me/logs', (req, res, next) => {
   })
     .catch(next);
 });
-app.put('/api/me/logs', (req, res, next) => {
-  console.log('updating logs');
+
+// PUT path should include id of resource being "put"
+app.put('/api/me/logs/:id', (req, res, next) => {
   const body = req.body;
-  console.log(body);
 
   client.query(`
     UPDATE logs
@@ -429,7 +423,7 @@ app.put('/api/me/logs', (req, res, next) => {
     WHERE id = $1
     RETURNING *;
   `,
-  [body.id, body.attempted, body.completed, body.weight]
+  [req.params.id, body.attempted, body.completed, body.weight]
   )
     .then(result => {
       res.send(result.rows[0]);
@@ -437,7 +431,9 @@ app.put('/api/me/logs', (req, res, next) => {
     .catch(next);
   
 });
-app.delete('/api/me/logs', (req, res, next) => {
+
+// Ditto DELETE
+app.delete('/api/me/logs/:id', (req, res, next) => {
   const body = req.body;
 
   client.query(`
@@ -465,9 +461,9 @@ app.get('/api/maxes', (req, res, next) => {
     })
     .catch(next);
 });
+
 app.post('/api/maxes', (req, res, next) => {
   const body = req.body;
-  if(body.description === 'error') return next('bad name');
 
   client.query(`
     INSERT INTO maxes (user_id, movement_id, weight)
@@ -482,13 +478,9 @@ app.post('/api/maxes', (req, res, next) => {
     .catch(next);
 });
 
-
-
-
 // app.use((req, res) => {
 //   res.sendFile('index.html', { root: 'public' });
 // });
-
 
 // start "listening" (run) the app (server)
 const PORT = process.env.PORT;
